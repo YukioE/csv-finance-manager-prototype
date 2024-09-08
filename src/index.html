@@ -7,7 +7,86 @@
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <h1>TEST</h1>
+    <div class="top-bar center">
+        <h1>
+            <strong>Financo</strong>
+        </h1>
+        <input type="file" name="file" id="file" accept=".csv">
+        <input type="month" name="month" id="month">
+    </div>
+    <div class="report-cards center">
+        <div class="report-card" id="income">
+            <header class="heading-flex">
+                <h2>Income</h2>
+                <span id="icon">icon</span>
+            </header>
+            <h4 id="income-amount">600,00€</h4>
+        </div>        
+        <div class="report-card" id="expense">
+            <header class="heading-flex">
+                <h2>Expenses</h2>
+                <span id="icon">icon</span>
+            </header>
+            <h4 id="expense-amount">234,56€</h4>
+        </div>
+        <div class="report-card" id="balance">
+            <header class="heading-flex">
+                <h2>Balance</h2>
+                <span id="icon">icon</span>
+            </header>
+            <header class="heading-flex">
+                <h4 id="balance-amount">365,44€</h4>
+                <span id="overflow">-56,11€</span>
+            </header>
+        </div>
+    </div>
+    <div class="category-report card"> 
+    </div>
+    <div class="transactions-report card">
+        <header class="heading-flex">
+            <h2>Transactions</h2>
+            <input class="search" type="text" placeholder="Search"></input>
+            <button class="button">add Transaction</button>
+        </header>
+        <table class="transactions-table">
+            <thead>
+                <tr>
+                    <th></th>
+                    <th>Date</th>
+                    <th>Description</th>
+                    <th>Category</th>
+                    <th>Amount</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>icon</td>
+                    <td>2024-09-15</td>
+                    <td>Lidl</td>
+                    <td>Food</td>
+                    <td>-4,00</td>
+                    <td><button class="button">edit</button></td>
+                </tr>
+                <tr>
+                    <td>icon</td>
+                    <td>2024-09-17</td>
+                    <td>Amazon</td>
+                    <td>Happy</td>
+                    <td>-20,00</td>
+                    <td><button class="button">edit</button></td>
+                </tr>
+                <tr>
+                    <td>icon</td>
+                    <td>2024-09-18</td>
+                    <td>Lidl</td>
+                    <td>Food</td>
+                    <td>-4,00</td>
+                    <td><button class="button">edit</button></td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
     <script src="app.js"></script>
     <script src="http://localhost:35729/livereload.js?snipver=1"></script>
 </body>

@@ -1,3 +1,96 @@
 body {
     background-color: #dfdfdf;
 }
+
+.center {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    align-items: center;
+    height: 5%;
+}
+
+.heading-flex {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.top-bar {
+    background-color: #473fe9;
+    position: relative;
+    top: -8px;
+    color: #fff;
+    padding: 10px;
+    border-bottom-left-radius: 10px;
+    border-bottom-right-radius: 10px;
+}
+
+.report-card {
+    background-color: #fff;
+    height: 120px;
+    border-radius: 10px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+    /* margin: 10px; */
+    padding-top: -10px;
+    padding-left: 10px;
+    padding-right: 10px;
+    width: 29%;
+}
+
+.report-cards > .report-card:first-child {
+    margin-left: 10px;
+}
+
+.report-cards > .report-card:last-child {
+    margin-right: 10px;
+}
+
+.card {
+    background-color: #fff;
+    border-radius: 10px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+    margin: 10px;
+    padding-top: -10px;
+    padding-left: 10px;
+    padding-right: 10px;
+    padding-bottom: 10px;
+}
+
+.transactions-table {
+    table-layout: auto;
+    width: 100%;
+    border-radius: 10px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+    border-collapse: collapse;
+    overflow: hidden;
+}
+
+.transactions-table thead {
+    background-color: #e8e8e8;
+}
+
+.transactions-table th {
+    padding: 10px;
+}
+
+.transactions-table tr {
+    text-align: center;
+    border-bottom: 1px solid #e8e8e8;
+}
+
+.transactions-table td {
+    padding: 10px;
+}
+
+.transactions-table th:first-child,
+.transactions-table td:first-child {
+    width: 1%;
+    white-space: nowrap;
+}
+
+.transactions-table th:last-child,
+.transactions-table td:last-child {
+    width: auto;
+    white-space: nowrap;
+}
