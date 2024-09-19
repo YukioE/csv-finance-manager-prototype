@@ -22,7 +22,7 @@ app.get('/', (req: express.Request, res: express.Response) =>
 app.listen(port, () => {
     const now = new Date();
     console.log(
-        'Server is running on http://localhost:' + port, " - ",
+        'Server is running on localhost:' + port, " - ",
         now.getHours() + ':' + now.getMinutes() + ':' + now.getSeconds()
     )
 })

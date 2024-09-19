@@ -46,6 +46,15 @@ body {
     margin-right: 10px;
 }
 
+.category-report {
+    background-color: #fff;
+    margin: 10px;
+    padding: 10px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
 .card {
     background-color: #fff;
     border-radius: 10px;
@@ -93,4 +102,40 @@ body {
 .transactions-table td:last-child {
     width: auto;
     white-space: nowrap;
+}
+
+#transaction-panel {
+    position: fixed;
+    top: 0;
+    border-bottom-left-radius: 20px;
+    right: -100%;
+    width: 40%;
+    height: 50%;
+    background-color: #fff;
+    box-shadow: -2px 0 5px rgba(0, 0, 0, 0.5);
+    transition: right 0.3s ease-out;
+    padding: 20px;
+    z-index: 1000;
+}
+
+#transaction-panel.active {
+    right: 0;
+}
+
+#transaction-form {
+    display: flex;
+    flex-direction: column;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    align-items: center;
+}
+
+#transaction-form label {
+    margin-top: 10px;
+    padding: 5px;
+}
+
+#transaction-form input, #transaction-form button {
+    margin-top: 5px;
+    padding: 5px;
 }
