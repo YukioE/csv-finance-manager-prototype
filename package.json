@@ -15,10 +15,12 @@
     "@types/connect-livereload": "^0.6.3",
     "@types/express": "^4.17.21",
     "@types/livereload": "^0.9.5",
+    "@types/multer": "^1.4.12",
     "connect-livereload": "^0.6.1",
     "express": "^4.19.2",
     "jquery-csv": "^1.0.40",
     "livereload": "^0.9.3",
+    "multer": "^1.4.5-lts.1",
     "nodemon": "^3.1.4",
     "typescript": "^5.5.4"
   }

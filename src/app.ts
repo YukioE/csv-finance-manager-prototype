@@ -1,9 +1,9 @@
 // Variables
 let selectedMonth = "00";
 let globalTransactions: transaction[];
-let incomeCategories = ["Income", "Refund", "Sale", "Gift"];
-let expenseCategories = ["Important", "Food", "Happy", "Sponsored", "Credit"];
 let sortDirection = 0;
+const incomeCategories = ["Income", "Refund", "Sale", "Gift"];
+const expenseCategories = ["Important", "Food", "Happy", "Sponsored", "Credit"];
 interface transaction {
     date: string;
     description: string;
@@ -15,6 +15,7 @@ interface transaction {
 // file and data handling
 const monthPicker = document.getElementById("month-picker") as HTMLSelectElement;
 const csvPicker = document.getElementsByClassName("csv-picker")[0] as HTMLInputElement;
+const fileform = document.getElementById("file-form") as HTMLFormElement;
 
 // report elements
 const incomeAmountElement = document.getElementById("income-amount") as HTMLInputElement;
@@ -50,6 +51,7 @@ monthPicker.addEventListener("change", (event) => {
 csvPicker.addEventListener("change", () => {
     if (csvPicker.files && csvPicker.files[0]) {
         loadCSV(csvPicker.files[0]);
+        handleFileUpload();
     }
 });
 
@@ -99,6 +101,30 @@ function init() {
         categoryElement.appendChild(category);
         valueNumber++;
     }
+
+    if (csvPicker.files && csvPicker.files[0]) {
+        handleFileUpload();
+        loadCSV(csvPicker.files[0]);
+    }
+}
+
+function handleFileUpload() {
+    if (!csvPicker.files || !csvPicker.files[0]) {
+        return;
+    }
+    const file = csvPicker.files[0];
+    const formData = new FormData(fileform);
+    const url = new URL(fileform.action);
+
+    formData.append("filename", file.name);
+    formData.append("file", file);
+ 
+    const fetchOptions = {
+        method: fileform.method,
+        body: formData,
+    };
+
+    fetch(url, fetchOptions);
 }
 
 function loadCSV(csvFile: File) {
@@ -146,16 +172,17 @@ function addTransaction() {
     category =
         categoryPicker.getElementsByTagName("option")[parseInt(category)].innerHTML;
 
-    let amount = (formElements[3] as HTMLInputElement).value.trim() ?? "0.00";
-    amount = parseFloat(amount).toFixed(2);
-    if (isNaN(parseFloat(amount))) {
-        amount = "0.00";
-    }
-
     let description = (formElements[1] as HTMLInputElement).value.trim() ?? category;
     if (description === "") {
-        description = category
+        description = category;
     }
+
+    let amount = (formElements[3] as HTMLInputElement).value.trim() ?? "0.00";
+    amount = parseFloat(amount).toFixed(2);
+    if (isNaN(parseFloat(amount)) || amount === "0.00") {
+        return;
+    }
+
     const date =
         (formElements[0] as HTMLInputElement).value ??
         new Date().toISOString().split("T")[0];
@@ -202,9 +229,6 @@ function updateCategoryReport() {
         flexMap.set(key, currentFlex);
         currentFlex += 2;
     });
-
-    console.log(flexMap);
-    console.log(expenseReport);
 
     // add category cards to report
     expenseReport.forEach((value, key) => {
@@ -286,18 +310,33 @@ function loadTransactions(transactions: transaction[]) {
     for (let i = 0; i < filteredTransactions.length; i++) {
         const tr = document.createElement("tr");
         const currentTransaction = filteredTransactions[i];
+        const editButton = document.createElement("button");
+        editButton.addEventListener("click", () => {
+            if (
+                confirm(
+                    `delete ${currentTransaction.date}, ${currentTransaction.description}, ${currentTransaction.category}, ${currentTransaction.amount}?`
+                ) === true
+            ) {
+                deleteTransaction(currentTransaction);
+            }
+        });
+        editButton.innerHTML = "delete";
         tr.innerHTML = `
             <td>icon</td>
             <td>${currentTransaction.date}</td>
             <td>${currentTransaction.description}</td>
             <td>${currentTransaction.category}</td>
             <td>${currentTransaction.amount}</td>
-            <td>button</td>
         `;
+        tr.appendChild(editButton);
         tableBody.appendChild(tr);
     }
 
     entryAmount.innerHTML = `${filteredTransactions.length} Transactions`;
+}
+
+function deleteTransaction(transaction: transaction) {
+    alert("deleted " + transaction.description);
 }
 
 function sortTransactions(column: number) {
