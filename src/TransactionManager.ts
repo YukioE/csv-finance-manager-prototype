@@ -400,6 +400,10 @@ export class TransactionManager {
             return;
         }
 
+        if (!amount.startsWith("-") && this.expenseCategories.includes(category)) {
+            amount = "-" + amount;
+        }
+
         const date =
             (formElements[0] as HTMLInputElement).value ??
             new Date().toISOString().split("T")[0];
