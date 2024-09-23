@@ -1,5 +1,6 @@
 // Variables
 let selectedMonth = "00";
+let selectedFile: File;
 let globalTransactions: transaction[];
 let sortDirection = 0;
 const incomeCategories = ["Income", "Refund", "Sale", "Gift"];
@@ -50,8 +51,9 @@ monthPicker.addEventListener("change", (event) => {
 
 csvPicker.addEventListener("change", () => {
     if (csvPicker.files && csvPicker.files[0]) {
-        loadCSV(csvPicker.files[0]);
-        handleFileUpload();
+        selectedFile = csvPicker.files[0];
+        loadCSV(selectedFile);
+        sendPathRequest();
     }
 });
 
@@ -82,6 +84,10 @@ transactionForm.addEventListener("submit", (event) => {
 init();
 
 function init() {
+    if (csvPicker.files) {
+        selectedFile = csvPicker.files[0];
+    }
+
     monthPicker.value = selectedMonth;
 
     //adding categories to category picker
@@ -102,29 +108,34 @@ function init() {
         valueNumber++;
     }
 
-    if (csvPicker.files && csvPicker.files[0]) {
-        handleFileUpload();
-        loadCSV(csvPicker.files[0]);
+    if (selectedFile) {
+        loadCSV(selectedFile);
+        sendPathRequest();
     }
 }
 
-function handleFileUpload() {
-    if (!csvPicker.files || !csvPicker.files[0]) {
+function sendPathRequest() {
+    if (!selectedFile) {
         return;
     }
-    const file = csvPicker.files[0];
-    const formData = new FormData(fileform);
-    const url = new URL(fileform.action);
 
-    formData.append("filename", file.name);
-    formData.append("file", file);
- 
+    const fileFolder =
+        prompt("Enter the file path to folder where the file is located:") ?? "";
+    const fileName = selectedFile.name;
+
+    if (fileFolder === "") {
+        return;
+    }
+
     const fetchOptions = {
-        method: fileform.method,
-        body: formData,
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ path: fileFolder + "/" + fileName }),
     };
 
-    fetch(url, fetchOptions);
+    fetch("/path", fetchOptions);
 }
 
 function loadCSV(csvFile: File) {
@@ -164,7 +175,7 @@ function loadCSV(csvFile: File) {
     };
 }
 
-function addTransaction() {
+async function addTransaction() {
     const formElements = transactionForm.elements;
     const categoryPicker = formElements[2] as HTMLInputElement;
 
@@ -194,7 +205,19 @@ function addTransaction() {
         amount: amount,
     };
 
-    console.log(transaction);
+    const fetchOptions = {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ method: "add", transaction: transaction }),
+    };
+
+    await fetch("/api", fetchOptions);
+
+    globalTransactions.push(transaction);
+
+    loadTransactions(globalTransactions);
 }
 
 function updateCategoryReport() {
