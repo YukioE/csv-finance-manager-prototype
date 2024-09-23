@@ -1,7 +1,12 @@
-import * as express from "express";
-import * as livereload from "livereload";
-import * as connectLiveReload from "connect-livereload";
-import routes from "./routes";
+import express from "express";
+import livereload from "livereload";
+import connectLiveReload from "connect-livereload";
+import routes from "./routes.js";
+import path from "path";
+import { fileURLToPath } from "url";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const app = express();
 const port = 8385;

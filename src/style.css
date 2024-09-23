@@ -135,7 +135,8 @@ body {
     padding: 5px;
 }
 
-#transaction-form input, #transaction-form button {
+#transaction-form input,
+#transaction-form button {
     margin-top: 5px;
     padding: 5px;
 }

@@ -1,8 +1,8 @@
 import { Request, Response } from "express";
-import { Transaction } from "./interfaces";
-import * as fs from "fs";
-import * as path from "path";
-import * as os from "os";
+import { Transaction } from "./interfaces.js";
+import fs from "fs";
+import path from "path";
+import os from "os";
 
 let filePath: string;
 
@@ -25,15 +25,15 @@ function deleteTransaction(
         if (err) {
             return callback(err);
         }
-        
+
         let transactions: Array<Transaction> = [];
-        data.split("\n").forEach(element => {
+        data.split("\n").forEach((element) => {
             const splitElement = element.split(",");
             const currentTransaction: Transaction = {
                 date: splitElement[0],
                 description: splitElement[1],
                 category: splitElement[2],
-                amount: parseFloat(splitElement[3]).toFixed(2).toString()
+                amount: parseFloat(splitElement[3]).toFixed(2).toString(),
             };
             transactions.push(currentTransaction);
         });
@@ -43,12 +43,11 @@ function deleteTransaction(
         }
 
         const transactionIndex = transactions.findIndex(
-            (t) => (
+            (t) =>
                 t.date === transaction.date &&
                 t.description === transaction.description &&
                 t.category === transaction.category &&
                 t.amount === transaction.amount
-            )
         );
 
         if (transactionIndex === -1) {
@@ -56,6 +55,10 @@ function deleteTransaction(
         }
 
         transactions.splice(transactionIndex, 1);
+        let stringTransactions = [`date,description,category,amount`];
+        stringTransactions = transactions.map(
+            (t) => `${t.date},${t.description},${t.category},${t.amount}`
+        );
 
         fs.writeFile(filePath, transactions.join("\n"), callback);
     });

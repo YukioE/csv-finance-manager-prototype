@@ -11,8 +11,8 @@
             <h1>
                 <strong>Financo</strong>
             </h1>
-            <input type="file" class="csv-picker" accept=".csv" />
-            <select name="month" class="month-picker" id="month-picker">
+            <input type="file" id="csv-picker" class="picker" accept=".csv" />
+            <select name="month" id="month-picker" class="picker" id="month-picker">
                 <option value="00">Year</option>
                 <option value="01">January</option>
                 <option value="02">February</option>
@@ -71,10 +71,10 @@
                 <thead id="transactions-head">
                     <tr>
                         <th></th>
-                        <th onclick="sortTransactions(0)">Date</th>
-                        <th onclick="sortTransactions(1)">Description</th>
-                        <th onclick="sortTransactions(2)">Category</th>
-                        <th onclick="sortTransactions(3)">Amount</th>
+                        <th>Date</th>
+                        <th>Description</th>
+                        <th>Category</th>
+                        <th>Amount</th>
                         <th></th>
                     </tr>
                 </thead>
@@ -98,7 +98,7 @@
                 <button type="button" id="cancel" class="button">Cancel</button>
             </form>
         </div>
-        <script src="app.js"></script>
+        <script src="app.js" type="module"></script>
         <script src="http://localhost:35729/livereload.js?snipver=1"></script>
     </body>
 </html>
