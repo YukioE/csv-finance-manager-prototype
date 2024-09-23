@@ -358,7 +358,20 @@ function loadTransactions(transactions: transaction[]) {
     entryAmount.innerHTML = `${filteredTransactions.length} Transactions`;
 }
 
-function deleteTransaction(transaction: transaction) {
+async function deleteTransaction(transaction: transaction) {
+    const fetchOptions = {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ method: "delete", transaction: transaction }),
+    };
+
+    await fetch("/api", fetchOptions);
+
+    globalTransactions = globalTransactions.filter((t) => t !== transaction);
+
+    loadTransactions(globalTransactions);
     alert("deleted " + transaction.description);
 }
 
