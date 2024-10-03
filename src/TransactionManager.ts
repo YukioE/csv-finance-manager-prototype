@@ -1,30 +1,22 @@
-import { Transaction } from "./interfaces.js";
+import { expenseCategories, Transaction } from "./interfaces.js";
+import { UIManager } from "./UIManager.js";
 
 export class TransactionManager {
     private globalTransactions: Transaction[];
-    private selectedMonth: string;
-    private sortDirection: number;
-    private selectedFile: File | null = null;
-    private incomeCategories: string[];
-    private expenseCategories: string[];
 
     constructor() {
         this.globalTransactions = [];
-        this.selectedMonth = "00";
-        this.sortDirection = 0;
-        this.incomeCategories = ["Income", "Refund", "Sale", "Gift"];
-        this.expenseCategories = ["Important", "Food", "Happy", "Sponsored", "Credit"];
 
         this.initEventListeners();
     }
 
     private initEventListeners() {
-        document.addEventListener("DOMContentLoaded", (event) => {
+        document.addEventListener("DOMContentLoaded", () => {
             this.init();
         });
 
         const monthPicker = document.getElementById("month-picker") as HTMLSelectElement;
-        const csvPicker = document.getElementById("csv-picker") as HTMLInputElement;
+        const pathForm = document.getElementById("path-form") as HTMLInputElement;
         const searchInput = document.getElementById("search-input") as HTMLInputElement;
         const transactionForm = document.getElementById(
             "transaction-form"
@@ -40,20 +32,18 @@ export class TransactionManager {
         ) as HTMLElement;
 
         monthPicker.addEventListener("change", (event) => {
-            this.selectedMonth = (event.target as HTMLSelectElement).value;
-            this.loadTransactions();
+            this.updateTransactions();
         });
 
-        csvPicker.addEventListener("change", () => {
-            if (csvPicker.files && csvPicker.files[0]) {
-                this.selectedFile = csvPicker.files[0];
-                this.loadCSV();
-                this.sendPathRequest();
-            }
+        pathForm.addEventListener("submit", (event) => {
+            event.preventDefault();
+            const pathInput = document.getElementById("path") as HTMLInputElement;
+            const filePath = pathInput.value.trim();
+            this.sendPathRequest(filePath);
         });
 
         searchInput.addEventListener("input", () => {
-            this.loadTransactions(true);
+            this.updateTransactions(true);
         });
 
         addTransactionButton.addEventListener("click", () => {
@@ -78,126 +68,120 @@ export class TransactionManager {
     }
 
     private init() {
-        const csvPicker = document.getElementById("csv-picker") as HTMLInputElement;
-        const monthPicker = document.getElementById("month-picker") as HTMLSelectElement;
-        const transactionForm = document.getElementById(
-            "transaction-form"
-        ) as HTMLFormElement;
+        const pathInput = document.getElementById("path") as HTMLInputElement;
 
-        if (csvPicker.files) {
-            this.selectedFile = csvPicker.files[0];
-        } else {
-            csvPicker.click();
-        }
+        let path = "";
 
-        monthPicker.value = this.selectedMonth;
-
-        let valueNumber = 1;
-        const categoryPickerElement = transactionForm.elements[2];
-        this.incomeCategories.forEach((category) => {
-            const categoryElement = document.createElement("option");
-            categoryElement.setAttribute("value", valueNumber.toString());
-            categoryElement.innerHTML = category;
-            categoryPickerElement.appendChild(categoryElement);
-            valueNumber++;
-        });
-        this.expenseCategories.forEach((category) => {
-            const categoryElement = document.createElement("option");
-            categoryElement.setAttribute("value", valueNumber.toString());
-            categoryElement.innerHTML = category;
-            categoryPickerElement.appendChild(categoryElement);
-            valueNumber++;
-        });
-
-        if (this.selectedFile) {
-            this.loadCSV();
-            this.sendPathRequest();
-        }
-
-        const headers = document.querySelectorAll("th");
-        headers.forEach((header, index) => {
-            header.addEventListener("click", () => {
-                this.sortTransactions(index);
+        // if cookies are available -> read in filepath from cookies
+        if (document.cookie) {
+            const cookie = document.cookie.split(";");
+            cookie.forEach((element) => {
+                const key = element.split("=")[0].trim();
+                const value = element.split("=")[1].trim();
+                if (key === "path") {
+                    path = value;
+                    pathInput.value = path;
+                    return;
+                }
             });
-        });
+        }
+
+        // if filepath is declared, send path request to server -> set path on server
+        if (path !== "") this.sendPathRequest(path);
     }
 
-    private sendPathRequest() {
-        if (!this.selectedFile) {
+    private async sendPathRequest(filePath: string) {
+        // return if filepath is not specified
+        if (filePath.trim() === "") {
             return;
         }
 
-        const fileFolder =
-            prompt("Enter the file path to folder where the file is located:") ?? "";
-        const fileName = this.selectedFile.name;
-
-        if (fileFolder === "") {
-            return;
-        }
-
+        // set request data
         const fetchOptions = {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
             },
-            body: JSON.stringify({ path: fileFolder + "/" + fileName }),
+            body: JSON.stringify({ path: filePath }),
         };
 
-        fetch("/path", fetchOptions);
+        // send post path request and await response
+        const response = await fetch("/path", fetchOptions);
+
+        // log error if request was not successful
+        if (response.status !== 200) {
+            console.error("could not send filepath to server!");
+            return;
+        }
+
+        // set cookies as request was successful + fetch transactions from server
+        document.cookie = `path=${filePath}`;
+        this.fetchTransactions();
     }
 
-    private loadCSV() {
-        // reset global transactions array, TODO is this nessessary?
-        // globalTransactions = [];
-
-        // select current month
-        this.selectedMonth = (new Date().getMonth() + 1).toString();
-        if (this.selectedMonth.length === 1) {
-            this.selectedMonth = "0" + this.selectedMonth;
-        }
-        const monthPicker = document.getElementById("month-picker") as HTMLSelectElement;
-        monthPicker.value = this.selectedMonth;
-
-        // read in csv file + populate global transactions array
-        const reader = new FileReader();
-        if (this.selectedFile) {
-            reader.readAsText(this.selectedFile);
-        } else {
-            console.error("No file selected.");
-        }
-        reader.onload = () => {
-            const csv = reader.result as string;
-            const [csvHeaders, ...csvData] = csv.split("\n").map((row) => row.split(","));
-            const headers = csvHeaders;
-            const data = csvData.sort((a, b) => a[0].localeCompare(b[0]));
-            data.forEach((row) => {
-                const transaction: Transaction = {
-                    date: row[0],
-                    description: row[1],
-                    category: row[2],
-                    amount: row[3].trim(),
-                };
-                this.globalTransactions.push(transaction);
-            });
-
-            //load transactions + calculate reports
-            this.loadTransactions();
+    private async fetchTransactions() {
+        // set request data
+        const fetchOptions = {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ method: "fetch" }),
         };
+
+        // send post path request and await response
+        const response = await fetch("/api", fetchOptions);
+
+        // log error if request was not successful
+        if (response.status !== 200 || response.body === undefined || response.body === null) {
+            console.error("could not fetch new transactions from server!");
+            return;
+        }
+
+        // parse fetched transactions and filter out header row
+        let fetchedTransactionsJSON = await response.json();
+        fetchedTransactionsJSON = fetchedTransactionsJSON.filter(
+            (transaction: Transaction) =>
+                transaction.date.toLowerCase() !== "date" &&
+                transaction.description.toLowerCase() !== "description" &&
+                transaction.category.toLowerCase() !== "category" &&
+                transaction.amount.toLowerCase() !== "nan"
+        );
+        const fetchedTransactions = JSON.stringify(fetchedTransactionsJSON);
+
+        // log error if fetched transactions could not be parsed
+        if (fetchedTransactions === undefined) {
+            console.error("could not parse fetched transactions!");
+            return;
+        }
+
+        // update global transactions
+        this.globalTransactions = [];
+        JSON.parse(fetchedTransactions).forEach((transaction: Transaction) => {
+            this.globalTransactions.push(transaction);
+        });
+
+        // update transactions
+        this.updateTransactions();
     }
 
     private updateCategoryReport() {
         // initialize category report
         const categoryReport = document.getElementById("category-report") as HTMLElement;
         categoryReport.innerHTML = "";
+        const selectedMonth = (
+            document.getElementById("month-picker") as HTMLSelectElement
+        ).value;
+
         let filteredTransactions = this.globalTransactions.filter((transaction) =>
             transaction.amount.startsWith("-")
         );
         let expenseReport = new Map<string, number>();
 
         // filter transactions by selected month and expenses
-        if (this.selectedMonth !== "00") {
+        if (selectedMonth !== "00") {
             filteredTransactions = filteredTransactions.filter((transaction) =>
-                transaction.date.split("-")[1].includes(this.selectedMonth)
+                transaction.date.split("-")[1].includes(selectedMonth)
             );
         }
 
@@ -206,7 +190,7 @@ export class TransactionManager {
             expenseReport.set(
                 transaction.category,
                 expenseReport.get(transaction.category) ??
-                    0 + Math.abs(parseFloat(transaction.amount))
+                0 + Math.abs(parseFloat(transaction.amount))
             );
         });
 
@@ -243,6 +227,9 @@ export class TransactionManager {
         const balanceAmountElement = document.getElementById(
             "balance-amount"
         ) as HTMLElement;
+        const selectedMonth = (
+            document.getElementById("month-picker") as HTMLSelectElement
+        ).value;
 
         // reset report amounts
         incomeAmountElement.innerHTML = "0.00";
@@ -250,9 +237,9 @@ export class TransactionManager {
         balanceAmountElement.innerHTML = "0.00";
         let filteredTransactions = this.globalTransactions;
 
-        if (this.selectedMonth !== "00") {
+        if (selectedMonth !== "00") {
             filteredTransactions = filteredTransactions.filter((transaction) =>
-                transaction.date.split("-")[1].includes(this.selectedMonth)
+                transaction.date.split("-")[1].includes(selectedMonth)
             );
         }
 
@@ -283,18 +270,21 @@ export class TransactionManager {
         });
     }
 
-    private loadTransactions(search: boolean = false, transactions?: Transaction[]) {
+    public updateTransactions(search: boolean = false, transactions?: Transaction[]) {
         const tableBody = document.getElementById("transactions-body") as HTMLElement;
         const searchInput = document.getElementById("search-input") as HTMLInputElement;
         const entryAmount = document.getElementById("entries") as HTMLElement;
+        const selectedMonth = (
+            document.getElementById("month-picker") as HTMLSelectElement
+        ).value;
 
         tableBody.innerHTML = "";
         let filteredTransactions = transactions ?? this.globalTransactions;
         const query = searchInput.value.toLowerCase().trim();
 
-        if (this.selectedMonth !== "00") {
+        if (selectedMonth !== "00") {
             filteredTransactions = filteredTransactions.filter((transaction) =>
-                transaction.date.split("-")[1].includes(this.selectedMonth)
+                transaction.date.split("-")[1].includes(selectedMonth)
             );
         }
 
@@ -314,7 +304,11 @@ export class TransactionManager {
             editButton.addEventListener("click", () => {
                 if (
                     confirm(
-                        `delete ${transaction.date}, ${transaction.description}, ${transaction.category}, ${transaction.amount}?`
+                        `delete
+                        ${transaction.date},
+                        ${transaction.description},
+                        ${transaction.category},
+                        ${transaction.amount}?`
                     ) === true
                 ) {
                     this.deleteTransaction(transaction);
@@ -340,43 +334,6 @@ export class TransactionManager {
         }
     }
 
-    private sortTransactions(column: number) {
-        let sortedTransactions = this.globalTransactions;
-
-        // cycle sort direction, 0 -> 1 -> 2 -> 0 ...
-        this.sortDirection = (this.sortDirection + 1) % 3;
-
-        // no sorting (reuse original sort by date)
-        if (this.sortDirection === 0) {
-            sortedTransactions.sort((a, b) => a.date.localeCompare(b.date));
-            this.loadTransactions(false, sortedTransactions);
-            return;
-        }
-
-        sortedTransactions.sort((a, b) => {
-            let comparison = 0;
-            switch (column) {
-                case 0:
-                    comparison = a.date.localeCompare(b.date);
-                    break;
-                case 1:
-                    comparison = a.description.localeCompare(b.description);
-                    break;
-                case 2:
-                    comparison = a.category.localeCompare(b.category);
-                    break;
-                case 3:
-                    comparison = parseFloat(a.amount) - parseFloat(b.amount);
-                    break;
-                default:
-                    comparison = 0;
-                    break;
-            }
-            return this.sortDirection === 1 ? -comparison : comparison;
-        });
-        this.loadTransactions(false, sortedTransactions);
-    }
-
     private async addTransaction() {
         const transactionForm = document.getElementById(
             "transaction-form"
@@ -400,7 +357,9 @@ export class TransactionManager {
             return;
         }
 
-        if (!amount.startsWith("-") && this.expenseCategories.includes(category)) {
+        if (
+            !amount.startsWith("-") && expenseCategories.includes(category)
+        ) {
             amount = "-" + amount;
         }
 
@@ -431,7 +390,7 @@ export class TransactionManager {
         }
 
         this.globalTransactions.push(transaction);
-        this.loadTransactions();
+        this.updateTransactions();
     }
 
     private async deleteTransaction(transaction: Transaction) {
@@ -454,6 +413,10 @@ export class TransactionManager {
             (t) => t !== transaction
         );
 
-        this.loadTransactions();
+        this.updateTransactions();
+    }
+
+    public get Transactions(): Transaction[] {
+        return this.globalTransactions;
     }
 }

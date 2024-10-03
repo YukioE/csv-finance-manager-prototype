@@ -4,3 +4,6 @@ export interface Transaction {
     category: string;
     amount: string;
 }
+
+export const incomeCategories = ["Income", "Refund", "Sale", "Gift"];
+export const expenseCategories = ["Important", "Food", "Happy", "Sponsored", "Credit"];

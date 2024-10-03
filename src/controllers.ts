@@ -72,22 +72,57 @@ export const handleApiRequest = (req: Request, res: Response) => {
     const method = req.body.method;
     const transaction: Transaction = req.body.transaction;
 
-    if (method === "add") {
-        addTransaction(transaction, (err) => {
-            if (err) {
-                return res.status(500).send(err);
+    switch (method) {
+        case "add":
+            addTransaction(transaction, (err) => {
+                if (err) {
+                    return res.status(500).send(err);
+                }
+                res.send(JSON.stringify(req.body.transaction) + "appended to file");
+            });
+            break;
+        case "delete":
+            deleteTransaction(transaction, (err) => {
+                if (err) {
+                    return res.status(500).send(err);
+                }
+                res.send(JSON.stringify(req.body.transaction) + "deleted from file");
+            });
+            break;
+        case "fetch":
+            if (filePath.trim() === "" || filePath === null) {
+                res.status(400).send("no filepath set on server!")
+                return;
             }
-            res.send(JSON.stringify(req.body.transaction) + "appended to file");
-        });
-    } else if (method === "delete") {
-        deleteTransaction(transaction, (err) => {
-            if (err) {
-                return res.status(500).send(err);
-            }
-            res.send(JSON.stringify(req.body.transaction) + "deleted from file");
-        });
-    } else {
-        res.send(JSON.stringify(req.body) + " received");
+            fs.readFile(filePath, "utf8", (err, data) => {
+                if (err) {
+                    res.status(500).send("error reading file!");
+                    return;
+                }
+        
+                let transactions: Array<Transaction> = [];
+                data.split("\n").forEach((element) => {
+                    const splitElement = element.split(",");
+                    const currentTransaction: Transaction = {
+                        date: splitElement[0],
+                        description: splitElement[1],
+                        category: splitElement[2],
+                        amount: parseFloat(splitElement[3]).toFixed(2).toString(),
+                    };
+                    transactions.push(currentTransaction);
+                });
+        
+                if (transactions === undefined) {
+                    res.status(400).send("no transactions found in file!");
+                    return;
+                }
+
+                res.send(transactions)
+            });
+            break;
+        default:
+            res.send(JSON.stringify(req.body) + " received");
+            break;
     }
 };
 
@@ -102,7 +137,13 @@ export const setFilePath = (req: Request, res: Response) => {
         inputPath = path.join(os.homedir(), inputPath.slice(1));
     }
 
-    filePath = path.resolve(path.normalize(inputPath));
+    const tempFilePath = path.resolve(path.normalize(inputPath));
 
-    res.send(JSON.stringify(filePath) + " set as file path");
+    if (fs.existsSync(tempFilePath) && tempFilePath.endsWith(".csv")) {
+        filePath = tempFilePath;
+        res.send(JSON.stringify(filePath) + " set as file path");
+        return;
+    }
+
+    res.status(400).send(`${tempFilePath} is not a valid filepath!`);
 };

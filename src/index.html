@@ -11,7 +11,9 @@
             <h1>
                 <strong>Financo</strong>
             </h1>
-            <input type="file" id="csv-picker" class="picker" accept=".csv" />
+            <form id="path-form" action="/path" method="post">
+                <input id="path" name="path" type="text" />
+            </form>
             <select name="month" id="month-picker" class="picker" id="month-picker">
                 <option value="00">Year</option>
                 <option value="01">January</option>
