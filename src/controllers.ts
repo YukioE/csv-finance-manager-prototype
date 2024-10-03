@@ -60,7 +60,7 @@ function deleteTransaction(
             (t) => `${t.date},${t.description},${t.category},${t.amount}`
         );
 
-        fs.writeFile(filePath, transactions.join("\n"), callback);
+        fs.writeFile(filePath, stringTransactions.join("\n"), callback);
     });
 }
 
