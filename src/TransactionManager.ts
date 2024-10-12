@@ -2,10 +2,10 @@ import { expenseCategories, Transaction } from "./interfaces.js";
 import { UIManager } from "./UIManager.js";
 
 export class TransactionManager {
-    private globalTransactions: Transaction[];
+    private localTransactions: Transaction[];
 
     constructor() {
-        this.globalTransactions = [];
+        this.localTransactions = [];
 
         this.initEventListeners();
     }
@@ -135,7 +135,11 @@ export class TransactionManager {
         const response = await fetch("/api", fetchOptions);
 
         // log error if request was not successful
-        if (response.status !== 200 || response.body === undefined || response.body === null) {
+        if (
+            response.status !== 200 ||
+            response.body === undefined ||
+            response.body === null
+        ) {
             console.error("could not fetch new transactions from server!");
             return;
         }
@@ -157,12 +161,12 @@ export class TransactionManager {
             return;
         }
 
-        // update global transactions
-        this.globalTransactions = [];
+        // update local transactions
+        this.localTransactions = [];
         JSON.parse(fetchedTransactions).forEach((transaction: Transaction) => {
-            this.globalTransactions.push(transaction);
+            this.localTransactions.push(transaction);
         });
-        this.globalTransactions.sort((a, b) => b.date.localeCompare(a.date));
+        this.localTransactions.sort((a, b) => b.date.localeCompare(a.date));
 
         // update transactions
         this.updateTransactions();
@@ -176,7 +180,7 @@ export class TransactionManager {
             document.getElementById("month-picker") as HTMLSelectElement
         ).value;
 
-        let filteredTransactions = this.globalTransactions.filter((transaction) =>
+        let filteredTransactions = this.localTransactions.filter((transaction) =>
             transaction.amount.startsWith("-")
         );
         let expenseReport = new Map<string, number>();
@@ -193,7 +197,7 @@ export class TransactionManager {
             expenseReport.set(
                 transaction.category,
                 expenseReport.get(transaction.category) ??
-                0 + Math.abs(parseFloat(transaction.amount))
+                    0 + Math.abs(parseFloat(transaction.amount))
             );
         });
 
@@ -238,7 +242,7 @@ export class TransactionManager {
         incomeAmountElement.innerHTML = "0.00";
         expenseAmountElement.innerHTML = "0.00";
         balanceAmountElement.innerHTML = "0.00";
-        let filteredTransactions = this.globalTransactions;
+        let filteredTransactions = this.localTransactions;
 
         if (selectedMonth !== "00") {
             filteredTransactions = filteredTransactions.filter((transaction) =>
@@ -282,7 +286,7 @@ export class TransactionManager {
         ).value;
 
         tableBody.innerHTML = "";
-        let filteredTransactions = transactions ?? this.globalTransactions;
+        let filteredTransactions = transactions ?? this.localTransactions;
         const query = searchInput.value.toLowerCase().trim();
 
         if (selectedMonth !== "00") {
@@ -305,19 +309,9 @@ export class TransactionManager {
             const tr = document.createElement("tr");
             const editButton = document.createElement("button");
             editButton.addEventListener("click", () => {
-                if (
-                    confirm(
-                        `delete
-                        ${transaction.date},
-                        ${transaction.description},
-                        ${transaction.category},
-                        ${transaction.amount}?`
-                    ) === true
-                ) {
-                    this.deleteTransaction(transaction);
-                }
+                this.deleteTransaction(transaction);
             });
-            editButton.innerHTML = "delete";
+            editButton.innerHTML = "...";
             tr.innerHTML = `
             <td>icon</td>
             <td>${transaction.date}</td>
@@ -349,27 +343,30 @@ export class TransactionManager {
             categoryPicker.getElementsByTagName("option")[parseInt(categoryValue)]
                 .innerHTML;
 
+        // set description, if not specified, use category
         let description = (formElements[1] as HTMLInputElement).value.trim();
         if (description === "") {
             description = category;
         }
 
+        // set amount, if not specified, return
         let amount = (formElements[3] as HTMLInputElement).value.trim() ?? "0.00";
         amount = parseFloat(amount).toFixed(2);
         if (isNaN(parseFloat(amount)) || amount === "0.00") {
             return;
         }
 
-        if (
-            !amount.startsWith("-") && expenseCategories.includes(category)
-        ) {
+        // set amount to negative if category is expense
+        if (!amount.startsWith("-") && expenseCategories.includes(category)) {
             amount = "-" + amount;
         }
 
+        // set date, if not specified, use current date
         const date =
             (formElements[0] as HTMLInputElement).value ??
             new Date().toISOString().split("T")[0];
 
+        // set transaction data
         let transaction: Transaction = {
             date: date,
             category: category,
@@ -377,6 +374,7 @@ export class TransactionManager {
             amount: amount,
         };
 
+        // set request data
         const fetchOptions = {
             method: "POST",
             headers: {
@@ -385,18 +383,35 @@ export class TransactionManager {
             body: JSON.stringify({ method: "add", transaction: transaction }),
         };
 
+        // send post add request and await response
         const response = await fetch("/api", fetchOptions);
 
+        // log error if request was not successful
         if (response.status !== 200) {
             console.error(response.statusText);
             return;
         }
 
-        this.globalTransactions.push(transaction);
+        // add transaction to local transactions and update transactions
+        this.localTransactions.push(transaction);
         this.updateTransactions();
     }
 
     private async deleteTransaction(transaction: Transaction) {
+        // cancel delete if user does not confirm
+        if (
+            confirm(
+                `delete
+                ${transaction.date},
+                ${transaction.description},
+                ${transaction.category},
+                ${transaction.amount}?`
+            ) !== true
+        ) {
+            return;
+        }
+
+        // set request data
         const fetchOptions = {
             method: "POST",
             headers: {
@@ -405,21 +420,22 @@ export class TransactionManager {
             body: JSON.stringify({ method: "delete", transaction: transaction }),
         };
 
+        // send post delete request and await response
         const response = await fetch("/api", fetchOptions);
 
+        // log error if request was not successful
         if (response.status !== 200) {
             console.error(response.statusText);
             return;
         }
 
-        this.globalTransactions = this.globalTransactions.filter(
-            (t) => t !== transaction
-        );
+        // remove transaction from local transactions
+        this.localTransactions = this.localTransactions.filter((t) => t !== transaction);
 
         this.updateTransactions();
     }
 
     public get Transactions(): Transaction[] {
-        return this.globalTransactions;
+        return this.localTransactions;
     }
 }
