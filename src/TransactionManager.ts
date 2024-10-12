@@ -86,6 +86,8 @@ export class TransactionManager {
             });
         }
 
+        this.updateTransactions();
+
         // if filepath is declared, send path request to server -> set path on server
         if (path !== "") this.sendPathRequest(path);
     }
@@ -160,6 +162,7 @@ export class TransactionManager {
         JSON.parse(fetchedTransactions).forEach((transaction: Transaction) => {
             this.globalTransactions.push(transaction);
         });
+        this.globalTransactions.sort((a, b) => b.date.localeCompare(a.date));
 
         // update transactions
         this.updateTransactions();
